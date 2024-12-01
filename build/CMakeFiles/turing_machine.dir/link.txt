@@ -1,0 +1,1 @@
+gcc  -Wall -Wextra CMakeFiles/turing_machine.dir/src/inputController.c.o CMakeFiles/turing_machine.dir/src/main.c.o CMakeFiles/turing_machine.dir/src/tapeController.c.o CMakeFiles/turing_machine.dir/src/transitionController.c.o CMakeFiles/turing_machine.dir/src/utils.c.o -o turing_machine 
