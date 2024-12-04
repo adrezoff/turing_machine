@@ -10,36 +10,21 @@
 
 int run() {
     int currentStateIndex = startIndex;  // Начальное состояние
-    char currentSymbol = '_';  // Начальный символ на ленте
-    int transitionFound = 0;   // Флаг, чтобы отслеживать, были ли найдены переходы
+    int errorCode = 0;
 
     while (currentStateIndex != stopIndex) {
-        // Получаем текущий символ
-        if (currentNode) {
-            currentSymbol = currentNode->symbol;
-        }
-
         // Получаем переход по текущему состоянию и символу
-        struct nodeTransition transition = getTransition(currentStateIndex, currentSymbol);
-
-        if (transition.index_trans != -1) {
-            // Выполняем переход
-            writeSymbol(transition.symbol);
-            moveHead(transition.direction);
-            currentStateIndex = transition.index_trans;
-            transitionFound = 1; 
-        } else {
-            transitionFound = 0;
-            break;  
-        }
+        struct nodeTransition transition = getTransition(currentStateIndex, currentNode->symbol);
+        errorCode = writeSymbol(transition.symbol);
+		if (errorCode < 0 ) { 
+			return errorCode;
+		}
+        errorCode = moveHead(transition.direction);
+		if (errorCode < 0 ) { 
+			return errorCode;
+		}
+        currentStateIndex = transition.index_trans;
     }
-
-    // Возвращаем код ошибки, если переходов не было
-    if (!transitionFound) {
-        return -301; 
-    }
-
-    // Печать ленты только если был найден хотя бы один переход
     printTape(); 
     return 0; 
 }

@@ -8,6 +8,7 @@ TapeNode *currentNode = NULL;
 TapeNode *leftmostNode = NULL;
 TapeNode *rightmostNode = NULL;
 
+
 // Создание нового узла ленты
 static TapeNode* createNode(int index, char symbol) {
     TapeNode *newNode = (TapeNode *)my_malloc(sizeof(TapeNode));
@@ -21,7 +22,34 @@ static TapeNode* createNode(int index, char symbol) {
     return newNode;
 }
 
-// Инициализация ленты: создается центральный узел с индексом 1
+// Удаление узла по ссылке
+void deleteNode(TapeNode **nodeToDelete) {
+    if (!nodeToDelete || !(*nodeToDelete)) {
+        return;	
+    }
+
+    TapeNode *node = *nodeToDelete;
+
+    // Если узел был первым в ленте
+    if (node->prev) {
+        node->prev->next = node->next;
+    } else {
+        leftmostNode = node->next;  
+    }
+
+    // Если узел был последним в ленте
+    if (node->next) {
+        node->next->prev = node->prev;
+    } else {
+        rightmostNode = node->prev;
+    }
+
+    my_free(node);
+    *nodeToDelete = NULL;
+
+}
+
+// Инициализация ленты
 int initializeTape() {
     currentNode = createNode(1, '_');
     if (!currentNode) {
@@ -37,54 +65,119 @@ int writeSymbol(char symbol) {
     if (!currentNode) {
         return -101; 
     }
-
     currentNode->symbol = symbol;
-
-    // Обновление границ ленты
-    if (symbol != '_') {
-        if (currentNode->index < leftmostNode->index) {
-            leftmostNode = currentNode;
-        }
-        if (currentNode->index > rightmostNode->index) {
-            rightmostNode = currentNode;
-        }
-    }
     return 0; 
 }
 
-// Перемещение головки в указанном направлении
+// Перемещение головки
 int moveHead(char direction) {
     if (!currentNode) {
         return -102;
     }
 
+
     switch (direction) {
-        case '<': 
+        case '<': {
             if (!currentNode->prev) {
-                // Создаем новый узел слева
-                currentNode->prev = createNode(currentNode->index - 1, '_');
-                if (!currentNode->prev) {
+                TapeNode *newNode = createNode(currentNode->index - 1, '_');
+                if (!newNode) {
                     return -103; 
                 }
-                currentNode->prev->next = currentNode;
+                newNode->next = currentNode;
+                currentNode->prev = newNode;
+                leftmostNode = newNode;
+                
+                if (currentNode->symbol == '_') {
+					TapeNode *temp = currentNode;
+					currentNode = currentNode->prev;
+					deleteNode(&temp);
+				} else {
+					currentNode = currentNode->prev;
+				}
             }
-            currentNode = currentNode->prev;
-            break;
 
-        case '>':
+            else if (currentNode->index - currentNode->prev->index == 1) {
+				if (currentNode->symbol == '_') {
+					TapeNode *temp = currentNode;
+					currentNode = currentNode->prev;
+					deleteNode(&temp);
+				} else {
+					currentNode = currentNode->prev;
+				}
+			}
+			else {
+				TapeNode *newNode = createNode(currentNode->index - 1, '_');
+				if (!newNode) {
+					return -104;
+				}
+				newNode->next = currentNode;
+				newNode->prev = currentNode->prev;
+                currentNode->prev = newNode;
+                
+                if (currentNode->symbol == '_') {
+					TapeNode *temp = currentNode;
+					currentNode = currentNode->prev;
+					deleteNode(&temp);
+				} else {
+					currentNode = currentNode->prev;
+				}
+			}
+
+            break;
+        }
+
+        case '>': {
             if (!currentNode->next) {
-                // Создаем новый узел справа
-                currentNode->next = createNode(currentNode->index + 1, '_');
-                if (!currentNode->next) {
-                    return -104; 
+                TapeNode *newNode = createNode(currentNode->index + 1, '_');
+                if (!newNode) {
+                    return -104;
                 }
-                currentNode->next->prev = currentNode;
-            }
-            currentNode = currentNode->next;
-            break;
+                newNode->prev = currentNode;
+                currentNode->next = newNode;
+                rightmostNode = newNode;
 
-        case '.':
+                if (currentNode->symbol == '_') {
+					TapeNode *temp = currentNode;
+					currentNode = currentNode->next;
+					deleteNode(&temp);
+				} else {
+					currentNode = currentNode->next;
+				}
+            }
+
+			else if (currentNode->next->index - currentNode->index == 1) {
+				if (currentNode->symbol == '_') {
+					TapeNode *temp = currentNode;
+					currentNode = currentNode->next;
+					deleteNode(&temp);
+				} else {
+					currentNode = currentNode->next;
+				}
+			} 
+			
+			else {
+				TapeNode *newNode = createNode(currentNode->index + 1, '_');
+				if (!newNode) {
+					return -104;
+				}
+				newNode->prev = currentNode;
+				newNode->next = currentNode->next;
+                currentNode->next = newNode;
+                if (currentNode->symbol == '_') {
+					TapeNode *temp = currentNode;
+					currentNode = currentNode->next;
+					deleteNode(&temp);
+				} else {
+					currentNode = currentNode->next;
+				}
+					
+			}			
             break;
+        }
+
+        case '.': {
+            break;
+        }
 
         default:
             return -105;
@@ -92,58 +185,10 @@ int moveHead(char direction) {
     return 0;
 }
 
-// Удаление пустых символов (_), начиная с правого конца
-int cleanRightSide() {
-    if (!rightmostNode) {
-        return -106; 
-    }
-
-    TapeNode *temp = rightmostNode;
-    while (temp && temp->symbol == '_') {
-        TapeNode *toDelete = temp;
-        temp = temp->prev;
-
-        if (toDelete != leftmostNode) {
-            my_free(toDelete);
-        }
-    }
-
-    if (temp && temp->symbol != '_') {
-        rightmostNode = temp;
-    } else {
-        rightmostNode = NULL;
-    }
-    return 0;
-}
-
-// Удаление пустых символов (_), начиная с левого конца
-int cleanLeftSide() {
-    if (!leftmostNode) {
-        return -107; 
-    }
-
-    TapeNode *temp = leftmostNode;
-    while (temp && temp->symbol == '_') {
-        TapeNode *toDelete = temp;
-        temp = temp->next;
-
-        if (toDelete != rightmostNode) {
-            my_free(toDelete);
-        }
-    }
-
-    if (temp && temp->symbol != '_') {
-        leftmostNode = temp;
-    } else {
-        leftmostNode = NULL;
-    }
-    return 0;
-}
-
-// Сброс головки в центральную позицию (индекс 1)
+// Сброс головки
 int resetHead() {
     if (!currentNode) {
-        return -102; 
+        return -102;
     }
 
     while (currentNode->index > 1) {
@@ -152,26 +197,28 @@ int resetHead() {
     while (currentNode->index < 1) {
         moveHead('>');
     }
-    return 0; 
+    return 0;
 }
 
 // Печать ленты
 int printTape() {
-    if (!currentNode) {
+    if (!leftmostNode || !rightmostNode) {
         return -108; 
     }
 
-    cleanLeftSide();
-    cleanRightSide();
-
     TapeNode *temp = leftmostNode;
+    int expectedIndex = leftmostNode->index;
+
     while (temp) {
+        while (expectedIndex < temp->index) {
+            write(1, "_", 1);
+            expectedIndex++;
+        }
         write(1, &temp->symbol, 1);
-        if (temp == rightmostNode) break;
+        expectedIndex++;
         temp = temp->next;
     }
-    
-	write(1, "\n", 1);
-	
+
+    write(1, "\n", 1);
     return 0;
 }

@@ -27,15 +27,13 @@ int parseMachineFile(const char *filename, int bufferSize) {
         fileIndex = 0;
 
         while (fileIndex < bytesRead) {
-            // Копируем данные до конца строки в dataBuffer
             while (fileIndex < bytesRead && fileReadBuffer[fileIndex] != '\n') {
                 dataBuffer[dataIndex++] = fileReadBuffer[fileIndex++];
             }
 
-            // Если встретили \n, начинаем обработку строки
             if (fileIndex < bytesRead && fileReadBuffer[fileIndex] == '\n') {
                 fileIndex++; // Пропускаем \n
-                dataBuffer[dataIndex] = '\0'; // Завершаем строку
+                dataBuffer[dataIndex] = '\0';
 
                 if (currentLine == 0) {
                     // Парсим количество состояний
