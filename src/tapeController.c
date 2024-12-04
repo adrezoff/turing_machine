@@ -13,7 +13,7 @@ TapeNode *rightmostNode = NULL;
 static TapeNode* createNode(int index, char symbol) {
     TapeNode *newNode = (TapeNode *)my_malloc(sizeof(TapeNode));
     if (!newNode) {
-        return NULL; 
+        return NULL;
     }
     newNode->index = index;
     newNode->symbol = symbol;
@@ -25,7 +25,7 @@ static TapeNode* createNode(int index, char symbol) {
 // Удаление узла по ссылке
 void deleteNode(TapeNode **nodeToDelete) {
     if (!nodeToDelete || !(*nodeToDelete)) {
-        return;	
+        return;
     }
 
     TapeNode *node = *nodeToDelete;
@@ -34,7 +34,7 @@ void deleteNode(TapeNode **nodeToDelete) {
     if (node->prev) {
         node->prev->next = node->next;
     } else {
-        leftmostNode = node->next;  
+        leftmostNode = node->next;
     }
 
     // Если узел был последним в ленте
@@ -53,20 +53,20 @@ void deleteNode(TapeNode **nodeToDelete) {
 int initializeTape() {
     currentNode = createNode(1, '_');
     if (!currentNode) {
-        return -100; 
+        return -100;
     }
     leftmostNode = currentNode;
     rightmostNode = currentNode;
-    return 0; 
+    return 0;
 }
 
 // Запись символа в текущую ячейку ленты
 int writeSymbol(char symbol) {
     if (!currentNode) {
-        return -101; 
+        return -101;
     }
     currentNode->symbol = symbol;
-    return 0; 
+    return 0;
 }
 
 // Перемещение головки
@@ -81,12 +81,12 @@ int moveHead(char direction) {
             if (!currentNode->prev) {
                 TapeNode *newNode = createNode(currentNode->index - 1, '_');
                 if (!newNode) {
-                    return -103; 
+                    return -103;
                 }
                 newNode->next = currentNode;
                 currentNode->prev = newNode;
                 leftmostNode = newNode;
-                
+
                 if (currentNode->symbol == '_') {
 					TapeNode *temp = currentNode;
 					currentNode = currentNode->prev;
@@ -113,7 +113,7 @@ int moveHead(char direction) {
 				newNode->next = currentNode;
 				newNode->prev = currentNode->prev;
                 currentNode->prev = newNode;
-                
+
                 if (currentNode->symbol == '_') {
 					TapeNode *temp = currentNode;
 					currentNode = currentNode->prev;
@@ -153,8 +153,8 @@ int moveHead(char direction) {
 				} else {
 					currentNode = currentNode->next;
 				}
-			} 
-			
+			}
+
 			else {
 				TapeNode *newNode = createNode(currentNode->index + 1, '_');
 				if (!newNode) {
@@ -170,8 +170,8 @@ int moveHead(char direction) {
 				} else {
 					currentNode = currentNode->next;
 				}
-					
-			}			
+
+			}
             break;
         }
 
@@ -203,7 +203,7 @@ int resetHead() {
 // Печать ленты
 int printTape() {
     if (!leftmostNode || !rightmostNode) {
-        return -108; 
+        return -108;
     }
 
     TapeNode *temp = leftmostNode;

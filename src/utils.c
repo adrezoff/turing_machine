@@ -1,5 +1,4 @@
 #include <unistd.h> 
-
 #include "utils.h"
 
 
@@ -96,16 +95,88 @@ void my_memset(char *buf, int val, int size) {
     }
 }
 
-// Выделение памяти
-void* my_malloc(int size) {
-    return (void *)sbrk(size);
+void *global_base = NULL;
+
+// Найти свободный блок подходящего размера
+Block *findFreeBlock(Block **last, unsigned int size) {
+    Block *current = global_base;
+    while (current && !(current->free && current->size >= size)) {
+        *last = current;
+        current = current->next;
+    }
+    return current;
 }
 
-// Отчистка памяти
-void* my_free(void* ptr) {
-	if (ptr != NULL) {
-        sbrk(-1 * sizeof(ptr)); 
+// Выделить новый блок
+Block *requestSpace(Block *last, unsigned int size) {
+    Block *block = sbrk(0); // Получить текущую брейк-точку
+    void *request = sbrk(size + BLOCK_SIZE); // Сдвинуть брейк-точку
+    if (request == (void*)-1) { // Проверить ошибку
+        return NULL;
     }
-    return 0;
+
+    if (last) {
+        last->next = block;
+    }
+
+    block->size = size;
+    block->free = 0;
+    block->next = NULL;
+    return block;
 }
+
+// Выделение памяти
+void *my_malloc(unsigned int size){
+    if (size <= 0) {
+        return NULL;
+    }
+
+    Block *block;
+    if (!global_base) { // Если это первый вызов malloc
+        block = requestSpace(NULL, size);
+        if (!block) {
+            return NULL;
+        }
+        global_base = block;
+    } else {
+        Block *last = global_base;
+        block = findFreeBlock(&last, size);
+        if (!block) { // Если свободного блока нет, выделяем новый
+            block = requestSpace(last, size);
+            if (!block) {
+                return NULL;
+            }
+        } else { // Если блок найден, переиспользуем его
+            block->free = 0;
+        }
+    }
+
+    return (block + 1); // Вернуть указатель на память после заголовка
+}
+
+void my_free(void *ptr) {
+    if (!ptr) {
+        return; // Ничего не делаем, если указатель NULL
+    }
+
+    // Получаем заголовок блока
+    Block *block = (Block*)ptr - 1;
+
+    // Помечаем блок как свободный
+    block->free = 1;
+
+    // Попробуем объединить соседние свободные блоки
+    Block *current = global_base;
+
+    while (current) {
+        if (current->free && current->next && current->next->free) {
+            // Объединяем текущий блок с следующим
+            current->size += BLOCK_SIZE + current->next->size;
+            current->next = current->next->next;
+        } else {
+            current = current->next;
+        }
+    }
+}
+
 
