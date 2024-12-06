@@ -8,7 +8,7 @@ typedef struct TapeNode {
     struct TapeNode *prev;
 } TapeNode;
 
-// Указатели на текущую головку и центральный блок
+// Указатели на текущую блок (головку)
 extern TapeNode *currentNode;
 
 int initializeTape();
@@ -16,7 +16,7 @@ int writeSymbol(char symbol);
 int moveHead(char direction);
 int cleanRightSide();
 int cleanLeftSide(); 
-int resetHead(); // вернуть currentNode в позицию с индексом 1 (перемещением головки)
+int resetHead(); 
 int printTape();
 
 #endif
