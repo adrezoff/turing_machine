@@ -205,7 +205,11 @@ int printTape() {
     if (!leftmostNode || !rightmostNode) {
         return -108;
     }
-
+    
+    if (currentNode->symbol == '_'){
+		deleteNode(&currentNode);
+	}
+	
     TapeNode *temp = leftmostNode;
     int expectedIndex = leftmostNode->index;
 

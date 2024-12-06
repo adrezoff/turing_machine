@@ -5,11 +5,11 @@
 #include "tapeController.h"
 #include "utils.h"
 
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 2048
 
 
 int run() {
-    int currentStateIndex = startIndex;  // Начальное состояние
+    int currentStateIndex = startIndex;
     int errorCode = 0;
 
     while (currentStateIndex != stopIndex) {

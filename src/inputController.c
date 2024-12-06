@@ -7,17 +7,26 @@
 #include "utils.h"
 
 
-// Функция для парсинга файла машины Тьюринга
 int parseMachineFile(const char *filename, int bufferSize) {
-	int errorCode = 0;
+    int errorCode = 0;
     int fd = open(filename, O_RDONLY);
     if (fd < 0) {
         return -2;
     }
 
-    char fileReadBuffer[bufferSize];
-    char dataBuffer[3 * bufferSize];
-    my_memset(dataBuffer, 0, sizeof(dataBuffer));
+    // Выделяем память для буферов через my_malloc
+    char *fileReadBuffer = (char *)my_malloc(bufferSize);
+    char *dataBuffer = (char *)my_malloc(bufferSize);
+    unsigned int dataBufferSize = bufferSize;
+
+    if (!fileReadBuffer || !dataBuffer) {
+        if (fileReadBuffer) my_free(fileReadBuffer);
+        if (dataBuffer) my_free(dataBuffer);
+        close(fd);
+        return -8;
+    }
+
+    my_memset(dataBuffer, 0, dataBufferSize);
 
     int bytesRead = 0, fileIndex = 0, dataIndex = 0;
     int stateCount = 0, transitionCount = 0;
@@ -28,6 +37,22 @@ int parseMachineFile(const char *filename, int bufferSize) {
 
         while (fileIndex < bytesRead) {
             while (fileIndex < bytesRead && fileReadBuffer[fileIndex] != '\n') {
+                if (dataIndex >= dataBufferSize - 1) {
+                    // Расширяем dataBuffer с помощью my_malloc и my_free
+                    unsigned int newBufferSize = dataBufferSize * 2;
+                    char *newBuffer = (char *)my_malloc(newBufferSize);
+                    if (!newBuffer) {
+                        my_free(fileReadBuffer);
+                        my_free(dataBuffer);
+                        close(fd);
+                        return -9;
+                    }
+                    my_memset(newBuffer, 0, newBufferSize);
+                    my_strcpy(newBuffer, dataBuffer);
+                    my_free(dataBuffer);
+                    dataBuffer = newBuffer;
+                    dataBufferSize = newBufferSize;
+                }
                 dataBuffer[dataIndex++] = fileReadBuffer[fileIndex++];
             }
 
@@ -45,16 +70,20 @@ int parseMachineFile(const char *filename, int bufferSize) {
                     for (int i = 0; dataBuffer[i] != '\0'; i++) {
                         if (dataBuffer[i] == ' ') {
                             state[stateIndex] = '\0';
-							errorCode = addState(state);
-							if (errorCode < 0 ) { 
-								close(fd);
-								return errorCode;
-							}
-							stateCount --;
-							if (stateCount < 0 ) { 
-								close(fd);
-								return -3;
-							}
+                            errorCode = addState(state);
+                            if (errorCode < 0) {
+                                my_free(fileReadBuffer);
+                                my_free(dataBuffer);
+                                close(fd);
+                                return errorCode;
+                            }
+                            stateCount--;
+                            if (stateCount < 0) {
+                                my_free(fileReadBuffer);
+                                my_free(dataBuffer);
+                                close(fd);
+                                return -3;
+                            }
                             stateIndex = 0;
                         } else {
                             state[stateIndex++] = dataBuffer[i];
@@ -62,11 +91,13 @@ int parseMachineFile(const char *filename, int bufferSize) {
                     }
                     if (stateIndex > 0) {
                         state[stateIndex] = '\0';
-						errorCode = addState(state);
-						if (errorCode < 0 ) { 
-							close(fd);
-							return errorCode;
-						}
+                        errorCode = addState(state);
+                        if (errorCode < 0) {
+                            my_free(fileReadBuffer);
+                            my_free(dataBuffer);
+                            close(fd);
+                            return errorCode;
+                        }
                     }
                 } else if (currentLine == 2) {
                     // Парсим количество переходов
@@ -105,16 +136,20 @@ int parseMachineFile(const char *filename, int bufferSize) {
                     direction = dataBuffer[i];
 
                     // Добавляем переход
-					errorCode = addTransition(startState, symbol, endState, newSymbol, direction);
-					transitionCount--;
-					if (transitionCount < 0 ) { 
-						close(fd);
-						return -7;
-					}
-					if (errorCode < 0 ) { 
-						close(fd);
-						return errorCode;
-					}
+                    errorCode = addTransition(startState, symbol, endState, newSymbol, direction);
+                    transitionCount--;
+                    if (transitionCount < 0) {
+                        my_free(fileReadBuffer);
+                        my_free(dataBuffer);
+                        close(fd);
+                        return -7;
+                    }
+                    if (errorCode < 0) {
+                        my_free(fileReadBuffer);
+                        my_free(dataBuffer);
+                        close(fd);
+                        return errorCode;
+                    }
                 }
 
                 // Переходим к следующей строке
@@ -125,13 +160,19 @@ int parseMachineFile(const char *filename, int bufferSize) {
     }
 
     if (bytesRead < 0) {
+        my_free(fileReadBuffer);
+        my_free(dataBuffer);
         close(fd);
-        return -4; 
+        return -4;
     }
 
+    // Освобождаем память
+    my_free(fileReadBuffer);
+    my_free(dataBuffer);
     close(fd);
-    return 0; 
+    return 0;
 }
+
 
 // Функция для парсинга начального состояния ленты
 int parseTapeFile(const char *filename, int bufferSize) {
