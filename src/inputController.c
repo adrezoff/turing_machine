@@ -7,8 +7,60 @@
 #include "utils.h"
 
 
-int parseMachineFile(const char *filename, int bufferSize) {
+// Функция получения пути к файлу через стандартынй ввод
+int readFileName(char **fileName, int bufferSize) {
+    *fileName = (char *)my_malloc(bufferSize);
+    if (*fileName == NULL) {
+        return -1;
+    }
+
+    int index = 0;
+    char ch;
+
+    // Чтение символов из стандартного ввода
+    while (read(STDIN_FILENO, &ch, 1) > 0) {
+        if (ch == '\n') {
+            break;
+        }
+
+        // Если буфер заканчивается, увеличиваем его размер
+        if (index >= bufferSize - 1) {
+            bufferSize *= 2;  // Удваиваем размер буфера
+            char *newBuffer = (char *)my_malloc(bufferSize);
+            if (newBuffer == NULL) {
+                my_free(*fileName); 
+                return -8; 
+            }
+            my_memset(newBuffer, 0, bufferSize);  
+            my_strcpy(newBuffer, *fileName);  
+            my_free(*fileName); 
+            *fileName = newBuffer;
+        }
+
+        (*fileName)[index++] = ch; 
+    }
+
+    if (index == 0) {
+        my_free(*fileName);
+        return -5;  
+    }
+
+    (*fileName)[index] = '\0';
+    return 0; 
+}
+
+// Функция для парсинга файла машины
+int parseMachineFile(int bufferSize) {
     int errorCode = 0;
+    char *filename = 0;
+    
+    write(1, "INPUT PATH MACHINE FILE:\n", 26);
+    
+    errorCode = readFileName(&filename, bufferSize);
+    if (errorCode < 0) {
+		return errorCode;
+	}
+
     int fd = open(filename, O_RDONLY);
     if (fd < 0) {
         return -2;
@@ -31,7 +83,8 @@ int parseMachineFile(const char *filename, int bufferSize) {
     int bytesRead = 0, fileIndex = 0, dataIndex = 0;
     int stateCount = 0, transitionCount = 0;
     int currentLine = 0; // Состояние парсинга (номер текущей строки в файле)
-
+	initializeTransitionTable();
+	
     while ((bytesRead = read(fd, fileReadBuffer, bufferSize)) > 0) {
         fileIndex = 0;
 
@@ -174,57 +227,46 @@ int parseMachineFile(const char *filename, int bufferSize) {
 }
 
 
-// Функция для парсинга начального состояния ленты
-int parseTapeFile(const char *filename, int bufferSize) {
-	int errorCode = 0;
-    int fd = open(filename, O_RDONLY);
-    if (fd < 0) {
-        return -5; 
-    }
-    
+// Функция для парсинга ленты
+int parseTapeInput(int bufferSize) {
+    int errorCode = 0;
+
+    // Используем стандартный ввод (stdin)
     char buffer[bufferSize];
     int bytesRead;
 
     errorCode = initializeTape();
-    if (errorCode < 0 ) {
-		close(fd);
-		return errorCode;
-	}
+    if (errorCode < 0) {
+        return errorCode;
+    }
+    
+    write(1, "INPUT TAPE:\n", 12);
 
-    // Чтение файла и обработка данных
-    while ((bytesRead = read(fd, buffer, bufferSize)) > 0) {
-        int index = 0;
-        while (index < bytesRead) {
-            if (buffer[index] == '\n') {
-                index++;
-                continue;
-            }
-            errorCode = writeSymbol(buffer[index]);
-			if (errorCode < 0 ) { 
-				close(fd);
-				return errorCode;
-			}
-			errorCode = moveHead('>');
-			if (errorCode < 0 ) { 
-				close(fd);
-				return errorCode;
-			}
-            index++;
+    // Чтение данных из стандартного ввода
+    while ((bytesRead = read(STDIN_FILENO, buffer, 1)) > 0) {
+        if (buffer[0] == '\n') {
+            break;  
+        }
+
+        errorCode = writeSymbol(buffer[0]);
+        if (errorCode < 0) {
+            return errorCode;
+        }
+
+        errorCode = moveHead('>');
+        if (errorCode < 0) {
+            return errorCode;
         }
     }
 
     if (bytesRead < 0) {
-        close(fd);
-        return -6;
+        return -6;  
     }
 
-    close(fd);
-    
-	errorCode = resetHead();
-	if (errorCode < 0 ) { 
-		close(fd);
-		return errorCode;
-	}
+    errorCode = resetHead();
+    if (errorCode < 0) {
+        return errorCode;
+    }
 
-    return 0; 
+    return 0;
 }

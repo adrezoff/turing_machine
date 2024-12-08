@@ -178,7 +178,7 @@ int moveHead(char direction) {
         case '.': {
             break;
         }
-
+		
         default:
             return -105;
     }
@@ -211,7 +211,13 @@ int printTape() {
 	}
 	
     TapeNode *temp = leftmostNode;
+    if (temp == NULL){
+	    write(1, "\n", 1);
+		return 0;
+	}
     int expectedIndex = leftmostNode->index;
+    
+    write(1, "OUTPUT TAPE:\n", 13);
 
     while (temp) {
         while (expectedIndex < temp->index) {

@@ -60,7 +60,6 @@ void printErrorCode(int returnCode) {
         write(1, returnCodeStr, len); 
         my_free(returnCodeStr); 
     }
-
     write(1, "\n", 1); 
 }
 

@@ -1,10 +1,13 @@
 #ifndef INPUT_CONTROLLER_H
 #define INPUT_CONTROLLER_H
 
+// Получение пути до файла
+int readFileName(char **fileName, int bufferSize);
+
 // Функция для парсинга файла машины Тьюринга
-int parseMachineFile(const char *filename, int bufferSize); 
+int parseMachineFile(int bufferSize); 
 
 // Функция для парсинга файла ленты
-int parseTapeFile(const char *filename, int bufferSize);
+int parseTapeInput(int bufferSize);
 
 #endif
