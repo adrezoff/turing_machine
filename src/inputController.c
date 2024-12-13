@@ -54,7 +54,7 @@ int parseMachineFile(int bufferSize) {
     int errorCode = 0;
     char *filename = 0;
     
-    write(1, "INPUT PATH MACHINE FILE:\n", 26);
+    write(1, "INPUT PATH MACHINE FILE:\n", 25);
     
     errorCode = readFileName(&filename, bufferSize);
     if (errorCode < 0) {
